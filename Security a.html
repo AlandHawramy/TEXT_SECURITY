@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Text Encryption</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-bg: #1a1a1a;
+            --secondary-bg: #2d2d2d;
+            --text-color: #ffffff;
+            --border-color: #3d3d3d;
+            --success-color: #4CAF50;
+            --error-color: #f44336;
+            --button-hover: #404040;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--primary-bg);
+            color: var(--text-color);
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: var(--secondary-bg);
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            margin: 0;
+            padding: 0;
+            font-size: 24px;
+        }
+
+        .text-area {
+            width: 100%;
+            height: 150px;
+            margin: 10px 0;
+            padding: 10px;
+            background-color: var(--primary-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            color: var(--text-color);
+            resize: vertical;
+            box-sizing: border-box;
+        }
+
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .button {
+            padding: 12px;
+            border: none;
+            border-radius: 4px;
+            background-color: var(--secondary-bg);
+            color: var(--text-color);
+            cursor: pointer;
+            font-size: 16px;
+            border: 1px solid var(--border-color);
+            transition: background-color 0.3s;
+        }
+
+        .button:hover {
+            background-color: var(--button-hover);
+        }
+
+        .status {
+            text-align: center;
+            margin: 10px 0;
+            font-weight: bold;
+            min-height: 24px;
+        }
+
+        .status.success {
+            color: var(--success-color);
+        }
+
+        .status.error {
+            color: var(--error-color);
+        }
+
+        .icon {
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-lock icon"></i>Advanced Text Encryption</h1>
+        </div>
+
+        <textarea id="input-text" class="text-area" placeholder="Enter text to encrypt or decrypt..."></textarea>
+        
+        <div class="buttons">
+            <button onclick="encrypt()" class="button">
+                <i class="fas fa-lock icon"></i>Encrypt
+            </button>
+            <button onclick="decrypt()" class="button">
+                <i class="fas fa-unlock icon"></i>Decrypt
+            </button>
+            <button onclick="pasteText()" class="button">
+                <i class="fas fa-paste icon"></i>Paste
+            </button>
+            <button onclick="clearText()" class="button">
+                <i class="fas fa-trash icon"></i>Clear
+            </button>
+        </div>
+
+        <textarea id="output-text" class="text-area" placeholder="Result will appear here..." readonly></textarea>
+        
+        <div id="status" class="status">
+            <footer>
+                Aland
+            </footer>
+        </div>
+
+        
+    </div>
+
+    <script>
+        // Extended symbols for more variety in separators
+        const symbols = '!@#$%^&*()_=+ℵℶℷℸ⅀∫∮∯∰≠≈≅≡⊕⊗⊢⊣⊤⊥⊛⨀∇∑√∆∞≷≸⊼⊰⊱∝∮∗⨆∠∡∥⊸⊹⊻⊿∠' + 
+                       'ℑℜ℘℧℩℮⅄⅊⅋⅌⅍ⅎ⅏↔↕↖↗↘↙↚↛↜↝↞↟' +
+                       '♠♡♢♣♤♥♦♧♨♩♪♫♬♭♮♯♰♱♲♳♴♵♶♷♸♹♺♻♼♽♾♿';
+
+        // Enhanced encryption key with more complexity
+        const EXTRA_KEY = 'kX9#mP2$vL5*nQ8@R3&jY7' + 
+                         'ℵℶℷℸ⅀∫∮∯∰≠≈≅≡⊕⊗⊢⊣⊤⊥⊛⨀∇∑√∆∞≷≸⊼⊰⊱∝∮∗⨆∠∡∥⊸⊹⊻⊿∠';
+        
+        function generateRandomSeparator(length = 12) {
+            let separator = '';
+            for (let i = 0; i < length; i++) {
+                separator += symbols[Math.floor(Math.random() * symbols.length)];
+            }
+            return separator;
+        }
+
+        async function generateKey(password, salt) {
+            const enc = new TextEncoder();
+            const keyMaterial = await crypto.subtle.importKey(
+                'raw',
+                enc.encode(password + EXTRA_KEY),
+                { name: 'PBKDF2' },
+                false,
+                ['deriveKey']
+            );
+
+            return crypto.subtle.deriveKey(
+                {
+                    name: 'PBKDF2',
+                    salt,
+                    iterations: 150000, // Increased iterations for better security
+                    hash: 'SHA-256'
+                },
+                keyMaterial,
+                { name: 'AES-GCM', length: 256 },
+                true,
+                ['encrypt', 'decrypt']
+            );
+        }
+
+        async function encrypt() {
+            const text = document.getElementById('input-text').value;
+            if (!text.trim()) {
+                showStatus('Please enter text to encrypt', 'error');
+                return;
+            }
+
+            try {
+                const salt = crypto.getRandomValues(new Uint8Array(16));
+                const iv = crypto.getRandomValues(new Uint8Array(12));
+                const key = await generateKey('secure-encryption-key', salt);
+                const enc = new TextEncoder();
+
+                const encryptedData = await crypto.subtle.encrypt(
+                    { name: 'AES-GCM', iv },
+                    key,
+                    enc.encode(text)
+                );
+
+                const encryptedArray = new Uint8Array(encryptedData);
+                const encryptedText = btoa(String.fromCharCode.apply(null, encryptedArray));
+                const ivHex = Array.from(iv).map(b => b.toString(16).padStart(2, '0')).join('');
+                const saltHex = Array.from(salt).map(b => b.toString(16).padStart(2, '0')).join('');
+                
+                // Use multiple random separators
+                const separator1 = generateRandomSeparator();
+                const separator2 = generateRandomSeparator();
+                document.getElementById('output-text').value = `${ivHex}${separator1}${saltHex}${separator2}${encryptedText}`;
+                showStatus('Text encrypted successfully', 'success');
+            } catch (e) {
+                showStatus('Encryption failed', 'error');
+                console.error(e);
+            }
+        }
+
+        async function decrypt() {
+            const text = document.getElementById('input-text').value.trim();
+            if (!text) {
+                showStatus('Please enter text to decrypt', 'error');
+                return;
+            }
+
+            try {
+                // Split using any sequence of symbols as separators
+                const parts = text.split(new RegExp(`[${symbols}]{12}`));
+                if (parts.length !== 3) throw new Error('Invalid encrypted format');
+
+                const [ivHex, saltHex, encryptedText] = parts;
+                
+                const iv = new Uint8Array(ivHex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+                const salt = new Uint8Array(saltHex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+                const encryptedArray = Uint8Array.from(atob(encryptedText), c => c.charCodeAt(0));
+
+                const key = await generateKey('secure-encryption-key', salt);
+                const decryptedData = await crypto.subtle.decrypt(
+                    { name: 'AES-GCM', iv },
+                    key,
+                    encryptedArray
+                );
+
+                const dec = new TextDecoder();
+                document.getElementById('output-text').value = dec.decode(decryptedData);
+                showStatus('Text decrypted successfully', 'success');
+            } catch (e) {
+                showStatus('Decryption failed', 'error');
+                console.error(e);
+            }
+        }
+
+        async function pasteText() {
+            const inputText = document.getElementById('input-text');
+            const outputText = document.getElementById('output-text');
+
+            try {
+                // First try to paste from output if it has content
+                if (outputText.value.trim() !== '') {
+                    inputText.value = outputText.value;
+                    showStatus('Text pasted from output', 'success');
+                    return;
+                }
+
+                // If output is empty, try clipboard
+                if (navigator.clipboard && navigator.clipboard.readText) {
+                    const clipboardText = await navigator.clipboard.readText();
+                    if (clipboardText.trim() !== '') {
+                        inputText.value = clipboardText;
+                        showStatus('Text pasted from clipboard', 'success');
+                        return;
+                    }
+                }
+                
+                showStatus('No text to paste', 'error');
+            } catch (err) {
+                console.error('Paste error:', err);
+                showStatus('Failed to paste text', 'error');
+            }
+        }
+
+        function clearText() {
+            document.getElementById('input-text').value = '';
+            document.getElementById('output-text').value = '';
+            showStatus('Text cleared', 'success');
+        }
+
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+            setTimeout(() => {
+                status.textContent = '';
+                status.className = 'status';
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
